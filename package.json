@@ -1,0 +1,35 @@
+{
+    "name": "fastkeeper",
+    "version": "0.1.0-alpha.rev0",
+    "description": "an MPP roomkeeper.",
+    "keywords": [
+        "multiplayerpiano",
+        "piano",
+        "mpp",
+        "keeper"
+    ],
+    "homepage": "https://github.com/Hyperflame1296/fastkeeper#readme",
+    "bugs": {
+        "url": "https://github.com/Hyperflame1296/fastkeeper/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Hyperflame1296/fastkeeper.git"
+    },
+    "license": "ISC",
+    "author": "TensiveYT",
+    "type": "module",
+    "main": "dist/index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "cli-color": "^2.0.4",
+        "mpp-client-net": "^1.2.3"
+    },
+    "devDependencies": {
+        "@types/cli-color": "^2.0.6",
+        "@types/node": "^25.0.3",
+        "typescript": "^5.9.3"
+    }
+}

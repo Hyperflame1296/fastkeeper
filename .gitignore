@@ -140,6 +140,6 @@ vite.config.ts.timestamp-*
 
 # my stuff
 /tokens.json
-/package.json
+/package-lock.json
 /storage.json
 /autobuild.ps1
