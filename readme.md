@@ -1,10 +1,10 @@
 # FastKeeper
-an MPP roomkeeper.  
-- made by [TensiveYT](https://youtube.com/@Hyperflamee8)
+An MPP roomkeeper!
+- Made by [TensiveYT](https://youtube.com/@Hyperflamee8)
 
-## Important
-before you run the bot, you need a bot token. without this, you WILL get sitebanned.
-so, create a `tokens.json`, and add this:
+## IMPORTANT!
+Before you run the bot, you *need* a bot token! Otherwise, you *will* get sitebanned!
+So, in the directory of FastKeeper, create a `tokens.json`, and add this:
 ```json
 {
     "wss://mppclone.com/": "<your bot token here>"
@@ -12,7 +12,11 @@ so, create a `tokens.json`, and add this:
 ```
 
 ## Usage
-to use FastKeeper, first run `npm i`  
-then, run `npx tsc`  
+In the command line, navigate to the directory of FastKeeper.
 
-then, run `node host.js`, and the bot will begin hosting.
+Then, run the following commands to build the bot:
+```bash
+npm i
+npx tsc
+```
+Then, run `node host` and the bot will begin running.
