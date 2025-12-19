@@ -19,4 +19,15 @@ Then, run the following commands to build the bot:
 npm i
 npx tsc
 ```
-Then, run `node host` and the bot will begin running.
+
+Then, make a JS file with the following contents:
+```js
+import { FastKeeper } from './dist/index.js'
+let keeper = new FastKeeper({
+    url: 'wss://mppclone.com',
+    channels: ['lobby', 'myRoom']
+})
+keeper.init()
+keeper.start()
+```
+...and run it using `node file.js`.

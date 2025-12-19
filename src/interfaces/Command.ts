@@ -1,6 +1,9 @@
 // import: local interfaces
 import { Subcommand } from './Subcommand.js'
 
+// import: classes
+import { Client } from 'mpp-client-net'
+
 // declaration
 export interface Command {
     name: string
@@ -10,5 +13,5 @@ export interface Command {
     subcommands?: Subcommand[]
     permissionLevel?: number
     requiresAdmin?: boolean
-    func?: (args?: string[], msg?: any) => void
+    func?: (client: Client, args?: string[], msg?: any) => void
 }

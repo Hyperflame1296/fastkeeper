@@ -1,3 +1,6 @@
+// import: classes
+import { Client } from 'mpp-client-net'
+
 // declaration
 export interface Subcommand {
     name: string
@@ -5,5 +8,5 @@ export interface Subcommand {
     syntax: string
     permissionLevel?: number
     requiresAdmin?: boolean
-    func: (args?: string[], msg?: any) => void
+    func: (client: Client, args?: string[], msg?: any) => void
 }

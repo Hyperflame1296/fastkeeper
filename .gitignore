@@ -143,3 +143,4 @@ vite.config.ts.timestamp-*
 /package-lock.json
 /storage.json
 /autobuild.ps1
+/host.js
