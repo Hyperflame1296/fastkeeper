@@ -14,6 +14,9 @@ import { FastKeeperOptions } from '../interfaces/FastKeeperOptions.js'
 import fs from 'node:fs'
 import color from 'cli-color'
 
+// import: local constants
+import { util } from '../constants/util.js'
+
 // code
 export class FastKeeper extends EventEmitter {
     version: string = 'v0.1.0-alpha.rev0'
@@ -24,9 +27,15 @@ export class FastKeeper extends EventEmitter {
     channels: string[] = []
     storage: StorageStream
     commandPrefix: string = '='
-    hasDroppedCrown: boolean = false
+    hasDroppedCrown: Record<string, boolean> = {}
     chownInterval: NodeJS.Timeout
     options: FastKeeperOptions
+    ranks: Record<string, number> = {
+        user: 0,
+        moderator: 1,
+        admin: 2,
+        owner: 3,
+    }
     tags: TagList = {
         info: `[${color.cyanBright('INFO')}] » `,
 		warn: `[${color.yellowBright('WARN')}] » `,
@@ -113,13 +122,13 @@ export class FastKeeper extends EventEmitter {
                         if (!_id) {
                             client.chown(msg.p._id)
                             this.send(client, msg.id, this.tags.success_mpp + `You have been granted room ownership!`)
-                            this.hasDroppedCrown = false
+                            this.hasDroppedCrown[client.desiredChannelId] = false
                         } else {
                             if (!client.ppl[_id])
-                                return this.send(msg.id, this.tags.failure_mpp + `There is no user in this room with an \`_id\` of \`${_id}\`.`)
+                                return this.send(client, msg.id, this.tags.failure_mpp + `There is no user in this room with an \`_id\` of \`${_id}\`.`)
                             client.chown(_id)
                             this.send(client, msg.id, this.tags.success_mpp + `Room ownership has been given to \`\`\`${client.findParticipantById(_id).name}\`\`\`!`)
-                            this.hasDroppedCrown = false
+                            this.hasDroppedCrown[client.desiredChannelId] = false
                         }
                     }
                 },
@@ -132,7 +141,64 @@ export class FastKeeper extends EventEmitter {
                             return this.send(client, this.tags.failure_mpp + 'The bot doesn\'t currently have the crown.')
                         client.chown()
                         this.send(client, this.tags.success_mpp + 'The crown has been dropped!')
-                        this.hasDroppedCrown = true
+                        this.hasDroppedCrown[client.desiredChannelId] = true
+                    }
+                },
+            ]
+        },
+        {
+            name: 'rank',
+            desc: 'Set or get the rank for a person.',
+            syntax: `${this.commandPrefix}rank <get | set> [_id]`,
+            aliases: ['r'],
+            subcommands: [
+                {
+                    name: 'set',
+                    desc: 'Set somebody\'s rank',
+                    syntax: `${this.commandPrefix}rank set <_id> <rank>`,
+                    permissionLevel: 2,
+                    func: (client, args, msg) => {
+                        let _id = args[1]?.replace('@', '')
+                        let rank = args[2]
+                        let currentRank = this.storage.get('roomPermissions')?.[client.desiredChannelId]?.[_id] ?? 0
+                        if (!_id)
+                            return this.send(client, msg.id, this.tags.failure_mpp + `Please specify the \`_id\` of the user.`)
+                        if (!rank)
+                            return this.send(client, msg.id, this.tags.failure_mpp + `Please specify the rank to set this user to.`)
+                        if (!client.ppl[_id])
+                            return this.send(client, msg.id, this.tags.failure_mpp + `There\'s no user in this room with an \`_id\` of \`${_id}\`.`)
+                        if (!(rank in this.ranks))
+                            return this.send(client, msg.id, this.tags.failure_mpp + `There\'s no rank named ${rank}.`)
+                        if (this.ranks[rank] > currentRank)
+                            return this.send(client, msg.id, this.tags.failure_mpp + `You can\'t set anybody to a higher rank than you are.`)
+                        if (!this.storage.get('roomPermissions')[client.desiredChannelId])
+                            this.storage.current.roomPermissions[client.desiredChannelId] = {}
+                        this.storage.current.roomPermissions[client.desiredChannelId][_id] = this.ranks[rank]
+                        this.storage.update()
+                        this.send(client, msg.id, this.tags.success_mpp + `Set ${util.lang.possessive(client.findParticipantById(_id).name)} rank to \`${rank}\`.`)
+                    }
+                },
+                {
+                    name: 'get',
+                    desc: 'Get somebody\'s rank.',
+                    syntax: `${this.commandPrefix}rank get [_id]`,
+                    func: (client, args, msg) => {
+                        let _id = args[1]?.replace('@', '')
+                        let ranks = Object.keys(this.ranks)
+                        let rank = this.storage.get('roomPermissions')?.[client.desiredChannelId]?.[_id ?? msg.p._id] ?? 0
+                        if (!_id)
+                            this.send(client, msg.id, this.tags.success_mpp + `Your rank is \`${ranks[rank]}\`.`)
+                        else
+                            this.send(client, msg.id, this.tags.success_mpp + `${util.lang.possessive(client.findParticipantById(_id).name)} rank is \`${ranks[rank]}\`.`)
+                    }
+                },
+                {
+                    name: 'ranks',
+                    desc: 'See all of the possible ranks. ',
+                    syntax: `${this.commandPrefix}rank ranks`,
+                    func: (client, a_, msg) => {
+                        let ranks = Object.keys(this.ranks)
+                        this.send(client, msg.id, this.tags.success_mpp + `All possible ranks: ${ranks.map(r => `\`${r}\``).join(', ')}`)
                     }
                 },
             ]
@@ -230,31 +296,39 @@ export class FastKeeper extends EventEmitter {
                 let client = this.clients[i]
                 this.setChannel(client, this.channels[i])
                 client.on('hi', () => {
-                    this.chownInterval = setInterval((() => {
-                        if (
-                            client.channel && 
-                            client.channel.crown && 
-                            !client.channel.crown.participantId &&
-                            !this.hasDroppedCrown &&
-                            Date.now() - client.channel.crown.time >= 14800
-                        ) {
-                            client.chown(client.participantId)
-                        }
-                    }).bind(this), 5)
                     this.userSet({
                         name: `FastKeeper [ ${this.commandPrefix}help ]`,
                         color: '#777777'
                     })
                     client.sendChat(this.tags.success_mpp + 'Connected!')
                     console.log(this.tags.info + `Client #${i + 1} connected!`)
+                    if (!this.chownInterval) {
+                        this.chownInterval = setInterval((() => {
+                            for (let client of this.clients) {
+                                if (
+                                    client.channel && 
+                                    client.channel.crown && 
+                                    !client.channel.crown.participantId &&
+                                    !this.hasDroppedCrown[client.desiredChannelId] &&
+                                    Date.now() - client.channel.crown.time >= 14800
+                                ) {
+                                    client.chown(client.participantId)
+                                }
+                            }
+                        }).bind(this), 5)
+                    }
                 })
                 client.on('disconnect', () => {
-                    this.chownInterval.close()
                     console.log(this.tags.info + `Client #${i + 1} disconnected.`)
+                    if (this.clients.every(cl => cl === client || (!cl.isConnected() && !cl.channel))) {
+                        this.chownInterval.close()
+                        this.chownInterval = undefined
+                        console.log(this.tags.info + `All clients have disconnected.`)
+                    }
                 })
                 client.on('ch', msg => {
                     if (msg.ch.crown && msg.ch.crown.participantId)
-                        this.hasDroppedCrown = false
+                        this.hasDroppedCrown[client.desiredChannelId] = false
                 })
                 client.on('a', msg => {
                     if (this.options.log.chat)
@@ -433,7 +507,7 @@ export class FastKeeper extends EventEmitter {
                                 !this.storage.get('globalAdmins').includes(msg.p._id)
                             )
                         ) {
-                            this.send(client, this.tags.failure_mpp + this.giveNoPermissionMessage())
+                            this.send(client, this.giveNoPermissionMessage())
                             return false
                         } else {
                             subcommand.func(client, args.slice(1), msg)

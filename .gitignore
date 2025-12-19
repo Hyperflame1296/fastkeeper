@@ -144,3 +144,5 @@ vite.config.ts.timestamp-*
 /storage.json
 /autobuild.ps1
 /host.js
+/fastkeeper.cmd
+/fastkeeper.lnk
