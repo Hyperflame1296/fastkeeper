@@ -48,11 +48,11 @@ export interface FastKeeperOptions {
          * The file to get tokens from.
          * @default './tokens.json'
          */
-        tokens: './tokens.json',
+        tokens: string,
         /**
          * The file to store data in.
          * @default './storage.json'
          */
-        storage: './storage.json'
+        storage: string
     }
 }
