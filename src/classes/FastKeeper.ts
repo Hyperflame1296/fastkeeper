@@ -196,7 +196,7 @@ export class FastKeeper extends EventEmitter {
                     name: 'ranks',
                     desc: 'See all of the possible ranks. ',
                     syntax: `${this.commandPrefix}rank ranks`,
-                    func: (client, a_, msg) => {
+                    func: (client, _, msg) => {
                         let ranks = Object.keys(this.ranks)
                         this.send(client, msg.id, this.tags.success_mpp + `All possible ranks: ${ranks.map(r => `\`${r}\``).join(', ')}`)
                     }
@@ -254,8 +254,16 @@ export class FastKeeper extends EventEmitter {
         this.options = {
             url: options?.url ?? 'wss://mppclone.com',
             channels: options?.channels ?? ['lobby'],
+            enableChatConnectionMessage: options?.enableChatConnectionMessage ?? true,
             log: {
-                chat: options?.log?.chat ?? true
+                chat : options?.log?.chat  ?? true,
+                info : options?.log?.info  ?? true,
+                warn : options?.log?.warn  ?? true,
+                error: options?.log?.error ?? true,
+            },
+            files: {
+                tokens: options?.files?.tokens ?? './tokens.json',
+                storage: options?.files?.storage  ?? './storage.json'
             }
         }
 
@@ -281,8 +289,8 @@ export class FastKeeper extends EventEmitter {
             let url = new URL(this.url)
 
             // assign class values
-            this.tokens = JSON.parse(fs.readFileSync('./tokens.json', 'utf-8'))
-            this.storage = new StorageStream('./storage.json')
+            this.tokens = JSON.parse(fs.readFileSync(this.options.files.tokens, 'utf-8'))
+            this.storage = new StorageStream(this.options.files.storage)
             for (let i = 0; i < this.channels.length; i++)
                 this.clients.push(new Client(url.href, this.tokens[url.href]))
 
@@ -300,17 +308,20 @@ export class FastKeeper extends EventEmitter {
                         name: `FastKeeper [ ${this.commandPrefix}help ]`,
                         color: '#777777'
                     })
-                    client.sendChat(this.tags.success_mpp + 'Connected!')
+                    if (this.options.enableChatConnectionMessage)
+                        client.sendChat(this.tags.success_mpp + 'Connected!')
                     console.log(this.tags.info + `Client #${i + 1} connected!`)
                     if (!this.chownInterval) {
                         this.chownInterval = setInterval((() => {
                             for (let client of this.clients) {
+                                if (!client.isConnected())
+                                    return
                                 if (
                                     client.channel && 
                                     client.channel.crown && 
                                     !client.channel.crown.participantId &&
                                     !this.hasDroppedCrown[client.desiredChannelId] &&
-                                    Date.now() - client.channel.crown.time >= 14800
+                                    Date.now() - client.channel.crown.time >= 14500
                                 ) {
                                     client.chown(client.participantId)
                                 }
@@ -325,6 +336,9 @@ export class FastKeeper extends EventEmitter {
                         this.chownInterval = undefined
                         console.log(this.tags.info + `All clients have disconnected.`)
                     }
+                    setTimeout(() => {
+                        client.connect()
+                    }, 250)
                 })
                 client.on('ch', msg => {
                     if (msg.ch.crown && msg.ch.crown.participantId)
