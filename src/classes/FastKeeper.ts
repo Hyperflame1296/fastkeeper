@@ -175,7 +175,7 @@ export class FastKeeper extends EventEmitter {
                             this.storage.current.roomPermissions[client.desiredChannelId] = {}
                         this.storage.current.roomPermissions[client.desiredChannelId][_id] = this.ranks[rank]
                         this.storage.update()
-                        this.send(client, msg.id, this.tags.success_mpp + `Set ${util.lang.possessive(client.findParticipantById(_id).name)} rank to \`${rank}\`.`)
+                        this.send(client, msg.id, this.tags.success_mpp + `Set ${util.lang.possessive(client.findParticipantById(_id).name)} rank in the room \`${client.desiredChannelId}\` to \`${rank}\`.`)
                     }
                 },
                 {
@@ -187,7 +187,7 @@ export class FastKeeper extends EventEmitter {
                         let ranks = Object.keys(this.ranks)
                         let rank = this.storage.get('roomPermissions')?.[client.desiredChannelId]?.[_id ?? msg.p._id] ?? 0
                         if (!_id)
-                            this.send(client, msg.id, this.tags.success_mpp + `Your rank is \`${ranks[rank]}\`.`)
+                            this.send(client, msg.id, this.tags.success_mpp + `Your rank in the room \`${client.desiredChannelId}\` is \`${ranks[rank]}\`.`)
                         else
                             this.send(client, msg.id, this.tags.success_mpp + `${util.lang.possessive(client.findParticipantById(_id).name)} rank is \`${ranks[rank]}\`.`)
                     }
