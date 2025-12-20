@@ -117,7 +117,7 @@ export class FastKeeper extends EventEmitter {
                     func: (client, args, msg) => {
                         let _id = args[1]?.replace('@', '')
                         if (!client.isOwner())
-                            return this.send(client, msg.id, this.tags.failure_mpp + 'The bot doesn\'t currently have the crown.')
+                            return this.send(client, msg.id, this.tags.failure_mpp + 'FastKeeper doesn\'t currently have the crown.')
 
                         if (!_id) {
                             client.chown(msg.p._id)
@@ -138,7 +138,7 @@ export class FastKeeper extends EventEmitter {
                     syntax: `${this.commandPrefix}crown drop`,
                     func: client => {
                         if (!client.isOwner())
-                            return this.send(client, this.tags.failure_mpp + 'The bot doesn\'t currently have the crown.')
+                            return this.send(client, this.tags.failure_mpp + 'FastKeeper doesn\'t currently have the crown.')
                         client.chown()
                         this.send(client, this.tags.success_mpp + 'The crown has been dropped!')
                         this.hasDroppedCrown[client.desiredChannelId] = true
