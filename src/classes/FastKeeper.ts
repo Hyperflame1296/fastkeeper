@@ -44,6 +44,88 @@ export class FastKeeper extends EventEmitter {
 		info_mpp: `🟦 » `,
 		failure_mpp: `🟥 » `
     }
+    mouse: { pos: [ number, number ], speed: [ number, number ] } = { pos: [ 50, 50 ], speed: [ 0, 0 ] }
+    intervals = {
+        chown: {
+            timeout: undefined,
+            started: false,
+            start(bind?: Object, int: number = 50) {
+                if (this.started)
+                    return
+                this.timeout = setInterval(bind !== undefined ? this.update.bind(bind) : this.update.bind(this), int)
+                this.started = true
+            },
+            stop() {
+                if (!this.started)
+                    return
+                this.timeout.close()
+                this.timeout = undefined
+            },
+            update: () => {
+                for (let client of this.clients) {
+                    if (!client.isConnected())
+                        continue
+                    if (
+                        client.channel && 
+                        client.channel.crown && 
+                        !client.channel.crown.participantId &&
+                        !this.hasDroppedCrown[client.desiredChannelId] &&
+                        Date.now() - client.channel.crown.time >= 14500
+                    ) {
+                        client.chown(client.participantId)
+                    }
+                }
+            }
+        },
+        kickban: {
+            timeout: undefined,
+            started: false,
+            start(bind?: Object, int: number = 50) {
+                if (this.started)
+                    return
+                this.timeout = setInterval(bind !== undefined ? this.update.bind(bind) : this.update.bind(this), int)
+                this.started = true
+            },
+            stop() {
+                if (!this.started)
+                    return
+                this.timeout.close()
+                this.timeout = undefined
+            },
+            update: () => {
+                for (let client of this.clients) {
+                    if (!client.isConnected())
+                        continue
+                }
+            }
+        },
+        mouse: {
+            timeout: undefined,
+            started: false,
+            start(bind?: Object, int: number = 50) {
+                if (this.started)
+                    return
+                this.timeout = setInterval(bind !== undefined ? this.update.bind(bind) : this.update.bind(this), int)
+                this.started = true
+            },
+            stop() {
+                if (!this.started)
+                    return
+                this.timeout.close()
+                this.timeout = undefined
+            },
+            update: () => {
+                this.mouse.speed[0] = 0.25
+                this.mouse.pos[0] = util.math.mod(this.mouse.pos[0] + this.mouse.speed[0], 100)
+                this.mouse.pos[1] = 50 + Math.sin((Date.now() / 1000) * Math.PI) * 10
+                for (let client of this.clients) {
+                    if (!client.isConnected())
+                        continue
+                    client.setCursor(this.mouse.pos[0], this.mouse.pos[1])
+                }
+            }
+        }
+    }
     commands: Command[] = [
         {
             name: 'help',
@@ -103,6 +185,47 @@ export class FastKeeper extends EventEmitter {
 				client.sendPing()
             }
         },
+        /*
+        {
+            name: 'ban',
+            desc: 'Ban somebody from the room.',
+            aliases: ['b'],
+            syntax: `${this.commandPrefix}ban <_id> <length> [reason]`,
+            permissionLevel: 2,
+            func: (client, args, msg) => {
+                if (!client.isOwner())
+                    return this.send(client, msg.id, this.tags.failure_mpp + 'FastKeeper doesn\'t currently have the crown.')
+                let _id = args[1]
+                let len = args[2]
+                let rea = args.slice(3).join(' ')
+                if (!client.ppl[_id])
+                    return this.send(client, msg.id, this.tags.failure_mpp + `There is no user in this room with an \`_id\` of \`${_id}\`.`)
+                if (len !== 'forever' && Number.isNaN(Number.parseInt(len)))
+                    return this.send(client, msg.id, this.tags.failure_mpp + `\`${len}\` is not a valid number.`)
+                let multiplier: number | 'forever' = (() => {
+                    if (len.endsWith('ms'))
+                        return 1
+                    if (len.endsWith('s'))
+                        return 1000
+                    if (len.endsWith('m'))
+                        return 1000 * 60
+                    if (len.endsWith('h'))
+                        return 1000 * 60 * 60
+                    if (len.endsWith('d'))
+                        return 1000 * 60 * 60 * 24
+                    if (len.endsWith('y'))
+                        return 1000 * 60 * 60 * 24 * 365
+                    if (len === 'forever')
+                        return 'forever'
+                    return 1000
+                })()
+                client.sendArray([{
+                    m: 'kickban',
+                    _id,
+                    ms: multiplier === 'forever' ? 18000000 : Math.min(Number.parseInt(len) * multiplier, 18000000)
+                }])
+            }
+        },*/
         {
             name: 'crown',
             desc: 'Modify FastKeeper\'s room ownership.',
@@ -311,29 +434,16 @@ export class FastKeeper extends EventEmitter {
                     if (this.options.enableChatConnectionMessage)
                         client.sendChat(this.tags.success_mpp + 'Connected!')
                     console.log(this.tags.info + `Client #${i + 1} connected!`)
-                    if (!this.chownInterval) {
-                        this.chownInterval = setInterval((() => {
-                            for (let client of this.clients) {
-                                if (!client.isConnected())
-                                    return
-                                if (
-                                    client.channel && 
-                                    client.channel.crown && 
-                                    !client.channel.crown.participantId &&
-                                    !this.hasDroppedCrown[client.desiredChannelId] &&
-                                    Date.now() - client.channel.crown.time >= 14500
-                                ) {
-                                    client.chown(client.participantId)
-                                }
-                            }
-                        }).bind(this), 5)
-                    }
+                    this.intervals.chown.start(this, 5)
+                    this.intervals.mouse.start(this, 50)
+                    this.intervals.kickban.start(this, 50)
                 })
                 client.on('disconnect', () => {
                     console.log(this.tags.info + `Client #${i + 1} disconnected.`)
                     if (this.clients.every(cl => cl === client || (!cl.isConnected() && !cl.channel))) {
-                        this.chownInterval.close()
-                        this.chownInterval = undefined
+                        this.intervals.chown.stop()
+                        this.intervals.mouse.stop()
+                        this.intervals.kickban.stop()
                         console.log(this.tags.info + `All clients have disconnected.`)
                     }
                     setTimeout(() => {
