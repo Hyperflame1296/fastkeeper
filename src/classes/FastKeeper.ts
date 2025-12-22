@@ -312,7 +312,7 @@ export class FastKeeper extends EventEmitter {
                         if (!_id)
                             this.send(client, msg.id, this.tags.success_mpp + `Your rank in the room \`${client.desiredChannelId}\` is \`${ranks[rank]}\`.`)
                         else
-                            this.send(client, msg.id, this.tags.success_mpp + `${util.lang.possessive(client.findParticipantById(_id).name)} rank is \`${ranks[rank]}\`.`)
+                            this.send(client, msg.id, this.tags.success_mpp + `${util.lang.possessive(client.findParticipantById(_id).name)} rank in the room \`${client.desiredChannelId}\` is \`${ranks[rank]}\`.`)
                     }
                 },
                 {
