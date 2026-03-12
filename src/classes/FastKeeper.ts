@@ -381,7 +381,7 @@ export class FastKeeper extends EventEmitter {
 
         // update options
         this.options = {
-            url: options?.url ?? 'wss://mppclone.com',
+            url: options?.url ?? 'wss://backend.multiplayerpiano.net',
             channels: options?.channels ?? ['lobby'],
             enableChatConnectionMessage: options?.enableChatConnectionMessage ?? true,
             log: {
