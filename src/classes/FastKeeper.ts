@@ -23,7 +23,7 @@ export class FastKeeper extends EventEmitter {
     initialized: boolean = false
     clients: Client[] = []
     tokens: Record<string, string> = {}
-    url: string = 'wss://mppclone.com'
+    url: string = 'wss://backend.multiplayerpiano.net'
     channels: string[] = []
     storage: StorageStream
     commandPrefix: string = '='
@@ -185,7 +185,6 @@ export class FastKeeper extends EventEmitter {
 				client.sendPing()
             }
         },
-        /*
         {
             name: 'ban',
             desc: 'Ban somebody from the room.',
@@ -217,15 +216,22 @@ export class FastKeeper extends EventEmitter {
                         return 1000 * 60 * 60 * 24 * 365
                     if (len === 'forever')
                         return 'forever'
-                    return 1000
+                    return 1000 * 60
                 })()
+                if (!this.storage.get('roomBans')[client.desiredChannelId])
+                    this.storage.current.roomBans[client.desiredChannelId] = {}
+                this.storage.current.roomBans[client.desiredChannelId][_id] = {
+                    length: Number.parseInt(len),
+                    reason: rea
+                }
+                this.storage.update()
                 client.sendArray([{
                     m: 'kickban',
                     _id,
                     ms: multiplier === 'forever' ? 18000000 : Math.min(Number.parseInt(len) * multiplier, 18000000)
                 }])
             }
-        },*/
+        },
         {
             name: 'crown',
             desc: 'Modify FastKeeper\'s room ownership.',
